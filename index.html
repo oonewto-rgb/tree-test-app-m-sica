@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tree test – App de música</title>
+<style>
+:root{--bg:#fff;--card:#fff;--ink:#111;--mute:#666;--line:#d9d9d9;--acc:#111;--ok:#1a7f37;--bad:#c62828;--soft:#f2f2f2;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px 60px}
+header{padding:36px 0 12px}
+h1{font-size:clamp(1.8rem,5vw,2.7rem);line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:28px 0 10px}
+p{max-width:68ch}
+.mute{color:var(--mute)}
+nav{display:flex;gap:8px;margin:12px 0 24px;border-bottom:1px solid var(--line);padding-bottom:12px}
+button{font:inherit;cursor:pointer;border-radius:8px;padding:9px 18px;border:1px solid var(--acc);background:transparent;color:var(--acc)}
+button.p{background:var(--acc);color:var(--card);font-weight:600}
+button:hover:not(:disabled){filter:brightness(1.1)}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+nav button.on{background:var(--soft)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+.bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:6px 0 18px}
+.bar i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.q{font-size:1.25rem;font-weight:600;margin:0 0 16px}
+.tree{list-style:none;margin:0;padding:0}
+.tree ul{list-style:none;margin:2px 0 4px 18px;padding-left:12px;border-left:2px solid var(--line)}
+.node{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:8px 12px;color:var(--ink);background:transparent}
+.node:hover{background:var(--soft)}
+.node.sel{background:var(--soft);font-weight:600;color:var(--acc)}
+.node.has::before{content:"▸ ";color:var(--mute)}
+.node.has.open::before{content:"▾ "}
+.pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.pick span{flex:1;min-width:180px;color:var(--mute);font-size:.95rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.cards div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.cards b{display:block;font-size:1.8rem;line-height:1.2}
+.cards small{color:var(--mute)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:16px}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:.92rem;vertical-align:top}
+th{background:var(--soft)}
+tr:last-child td{border-bottom:0}
+.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.pb{display:inline-block;width:90px;height:8px;background:var(--soft);border-radius:99px;vertical-align:middle;margin-right:8px;overflow:hidden}
+.pb i{display:block;height:100%;background:var(--ink)}
+.pb i.g{background:var(--ok)}
+.pb i.l{background:var(--bad)}
+.an li{margin-bottom:6px;max-width:70ch}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.cr{display:flex;gap:10px;align-items:center;margin:10px 0}
+.cr>b{width:58px;font-size:.9rem;flex:none}
+.cb{flex:1;min-width:0}
+.hr{display:flex;align-items:center;gap:8px;margin:2px 0}
+.hr em{width:54px;font-size:.75rem;font-style:normal;text-align:right;flex:none}
+.hb{flex:1;height:14px;background:var(--soft);border-radius:4px;position:relative}
+.hb i{display:block;height:100%;border-radius:4px}
+.hb u{position:absolute;top:-2px;bottom:-2px;border-left:2px dashed var(--ink);text-decoration:none}
+i.g{background:var(--ok)}i.l{background:var(--bad)}i.k2{background:var(--ink)}i.k3{background:#9a9a9a}
+.pw{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.pie{width:170px;height:170px;border-radius:50%;flex:none}
+.pl{flex-direction:column;gap:8px;font-size:.95rem;color:var(--ink);margin:0}
+i.m{background:#8fcfa5}
+.lg{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--mute);margin:8px 0 12px}
+.lg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+details.panel{padding:12px 20px}details.panel summary{cursor:pointer}details.panel h3{font-size:1rem;margin:14px 0 6px}details.panel .scroll{margin-bottom:8px}details.panel table{min-width:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Tree test: app de música</h1>
+  <p class="mute">Prueba para ver si el menú de una app de música es fácil de entender.</p>
+</header>
+<nav aria-label="Vistas">
+  <button id="nTest" class="on">Hacer el test</button>
+  <button id="nGlob">Resultados globales</button>
+</nav>
+
+<main>
+<section id="vIntro">
+  <div class="panel">
+    <h2 style="margin-top:0">Antes de empezar</h2>
+    <p>Verás el menú de una app de música, solo con texto. Se te pedirán 10 tareas. En cada una, abre las secciones hasta donde crees que encontrarías lo que se pide y pulsa <b>Confirmar respuesta</b>.</p>
+    <p>No hay respuestas buenas ni malas: lo que se evalúa es el menú, no tú. Si no sabes dónde estaría, pulsa <b>No lo sé</b>.</p>
+    <button class="p" id="go">Empezar el test</button>
+  </div>
+</section>
+
+<section id="vTask" hidden>
+  <p class="mute" id="prog"></p>
+  <div class="bar"><i id="pbar"></i></div>
+  <div class="panel">
+    <p class="q" id="q"></p>
+    <ul class="tree" id="tree"></ul>
+    <div class="pick">
+      <span id="cur">Aún no has elegido nada.</span>
+      <button id="skip">No lo sé</button>
+      <button class="p" id="ok" disabled>Confirmar respuesta</button>
+    </div>
+  </div>
+</section>
+
+<section id="vInd" hidden>
+  <h2 style="margin-top:0">Tus resultados</h2>
+  <div class="cards" id="iCards"></div>
+  <div class="scroll"><table><thead><tr><th>Tarea</th><th>Resultado</th><th>Tiempo transcurrido</th><th>Primer clic</th><th>Destino (tu respuesta)</th><th>Respuesta correcta</th></tr></thead><tbody id="iRows"></tbody></table></div>
+  <div class="panel pw" id="iPie"></div>
+  <div class="panel" id="iChart"></div>
+  <div class="panel"><b>Análisis de tu test</b><ul class="an" id="iAn"></ul></div>
+  <div class="tools"><button class="p" id="again">Hacer otro test</button><button id="toG">Ver resultados globales</button></div>
+</section>
+
+<section id="vGlob" hidden>
+  <h2 style="margin-top:0">Resultados globales</h2>
+  <div id="gEmpty" class="panel" hidden>Todavía no hay tests completados. Haz el primero para ver los resultados.</div>
+  <div id="gBody">
+    <div class="cards" id="gCards"></div>
+    <h3>Resultados por tarea</h3>
+    <div class="scroll"><table><thead><tr><th>Tarea</th><th>Éxito</th><th>Directencia</th><th>Tiempo transcurrido</th><th>Primer clic correcto</th><th>Destino erróneo más común</th></tr></thead><tbody id="gRows"></tbody></table></div>
+    <h3>Distribución de resultados</h3>
+    <div class="panel pw" id="gPie"></div>
+    <h3>Gráfico comparativo por tarea</h3>
+    <div class="panel" id="gChart"></div>
+    <h3>Tiempo transcurrido por tarea</h3>
+    <div class="panel" id="gTime"></div>
+    <h3>Detalle por tarea: primer clic, destino y frecuencia de selección</h3>
+    <div id="gDet"></div>
+    <h3>Comparación entre participantes</h3>
+    <div class="panel" id="gP"></div>
+    <div class="scroll"><table><thead><tr><th>Participante</th><th>Fecha</th><th>Aciertos</th><th>Directos</th><th>Tiempo medio</th><th>Frente a la media</th></tr></thead><tbody id="gPart"></tbody></table></div>
+    <div class="panel"><b>Análisis global</b><ul class="an" id="gAn"></ul></div>
+  </div>
+  <p class="mute">Los datos se guardan en este navegador. Para reunir los de varias personas, cada una exporta su archivo JSON y se importan todos en el mismo navegador.</p>
+  <div class="tools">
+    <button id="eCsv">Exportar CSV</button>
+    <button id="eJson">Exportar JSON</button>
+    <button id="imp">Importar JSON</button>
+    <button id="reset">Borrar todos los datos</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+const T=[["Inicio",[["Novedades"],["Recomendados para ti"],["Escuchado recientemente"]]],
+["Buscar",[["Canciones"],["Artistas"],["Álbumes"],["Géneros y estados de ánimo"]]],
+["Mi biblioteca",[["Música guardada",[["Canciones guardadas"],["Álbumes guardados"],["Artistas que sigo"]]],["Listas de reproducción",[["Crear lista nueva"],["Mis listas"],["Listas compartidas conmigo"]]],["Descargas"],["Subir mi propia música"]]],
+["Reproductor",[["Reproduciendo ahora"],["Cola de reproducción"],["Letra de la canción"],["Ecualizador"],["Temporizador para dormir"]]],
+["Compartir",[["Enviar a un amigo"],["Copiar enlace"],["Compartir en redes sociales"],["Listas colaborativas"],["Invitar amigos a la app"]]],
+["Perfil",[["Ver mi perfil",[["Editar foto y nombre"],["Mis listas públicas"]]],["Amigos y seguidores"],["Mis estadísticas de escucha"],["Historial de reproducción"],["Suscripción y pagos"]]],
+["Ajustes",[["Cuenta y contraseña"],["Calidad del audio"],["Notificaciones"],["Privacidad"],["Idioma"],["Ayuda y contacto"]]]];
+const K=[
+["Has encontrado una canción que te encanta y quieres tenerla siempre a mano en tu cuenta. ¿Dónde mirarías para ver tus canciones ya guardadas?","Mi biblioteca › Música guardada › Canciones guardadas"],
+["Quieres armar una selección de canciones para tu entrenamiento. ¿Dónde la crearías?","Mi biblioteca › Listas de reproducción › Crear lista nueva"],
+["Vas a viajar en avión y no tendrás internet. ¿Dónde encontrarías la música que puedes escuchar sin conexión?","Mi biblioteca › Descargas"],
+["Quieres mandarle una canción a un amigo para que la escuche. ¿Por dónde empezarías?","Compartir › Enviar a un amigo"],
+["Tú y tus amigos quieren armar juntos una lista para una fiesta. ¿Dónde lo harías?","Compartir › Listas colaborativas"],
+["Estás escuchando una canción y quieres ver qué canciones van a sonar después. ¿Dónde lo ves?","Reproductor › Cola de reproducción"],
+["Quieres que la música se apague sola mientras te duermes. ¿Dónde lo configuras?","Reproductor › Temporizador para dormir"],
+["Quieres cambiar la foto que ven los demás en tu cuenta. ¿Dónde lo harías?","Perfil › Ver mi perfil › Editar foto y nombre"],
+["Tienes curiosidad por saber cuáles fueron los artistas que más escuchaste este año. ¿Dónde lo buscarías?","Perfil › Mis estadísticas de escucha"],
+["Tienes archivos de música en tu móvil y quieres meterlos en la app. ¿Dónde lo harías?","Mi biblioteca › Subir mi propia música"]];
+const S=" › ",NA="(sin respuesta)",KEY="tt_music_v1",$=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+const pct=(n,d)=>d?Math.round(100*n/d):0;
+const sec=ms=>(ms/1000).toFixed(1)+" s";
+let db=[];try{db=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert("No se pudo guardar en este navegador.")}};
+
+function view(id){["vIntro","vTask","vInd","vGlob"].forEach(v=>$(v).hidden=v!==id);
+ $("nTest").classList.toggle("on",id!=="vGlob");$("nGlob").classList.toggle("on",id==="vGlob");window.scrollTo(0,0)}
+
+/* ---------- test ---------- */
+let order,cur,res,sel,back,first,t0,clk;
+function start(){order=K.map((_,i)=>i).sort(()=>Math.random()-.5);cur=0;res=[];view("vTask");task()}
+function task(){
+ if(cur>=order.length)return finish();
+ sel=[];back=0;first=null;clk=[];t0=Date.now();
+ $("prog").textContent="Tarea "+(cur+1)+" de "+order.length;
+ $("pbar").style.width=(100*cur/order.length)+"%";
+ $("q").textContent=K[order[cur]][0];
+ draw()}
+function draw(){
+ const walk=(nodes,pre)=>"<ul"+(pre.length?"":' class="tree"')+">"+nodes.map(n=>{
+  const p=pre.concat(n[0]),kids=n[1],on=sel.length>=p.length&&p.every((x,i)=>sel[i]===x);
+  const isSel=sel.length===p.length&&on;
+  return "<li><button class=\"node"+(kids?" has":"")+(on&&kids?" open":"")+(isSel?" sel":"")+"\" data-p=\""+esc(p.join("|"))+"\">"+esc(n[0])+"</button>"+(on&&kids?walk(kids,p):"")+"</li>"}).join("")+"</ul>";
+ $("tree").outerHTML=walk(T,[]).replace("<ul class=\"tree\"","<ul class=\"tree\" id=\"tree\"");
+ $("tree").onclick=e=>{const b=e.target.closest(".node");if(b)click(b.dataset.p.split("|"))};
+ $("cur").textContent=sel.length?"Tu elección: "+sel.join(S):"Aún no has elegido nada.";
+ $("ok").disabled=!sel.length}
+function click(p){
+ if(first===null)first=p[0];
+ clk.push(p.join(S));
+ const fwd=p.length===sel.length+1&&sel.every((x,i)=>p[i]===x);
+ if(!fwd)back++;
+ sel=(p.length===sel.length&&p.every((x,i)=>sel[i]===x))?p.slice(0,-1):p;
+ draw()}
+function answer(skip){
+ const i=order[cur],p=skip?NA:sel.join(S),ok=p===K[i][1];
+ res.push({t:i,p:p,ok:ok,d:ok&&back===0,ms:Date.now()-t0,f:first||"-",c:Array.from(new Set(clk))});
+ cur++;task()}
+function finish(){
+ const rec={id:Date.now(),d:new Date().toLocaleDateString("es-ES"),r:res.sort((a,b)=>a.t-b.t)};
+ db.push(rec);save();showInd(rec)}
+
+/* ---------- individual ---------- */
+function showInd(rec){
+ view("vInd");const r=rec.r,n=r.length,ok=r.filter(x=>x.ok).length,dr=r.filter(x=>x.d).length,tm=avg(r.map(x=>x.ms));
+ $("iCards").innerHTML=[[ok+"/"+n,"respuestas correctas"],[dr+"/"+n,"directencia (sin desvíos)"],[sec(tm),"tiempo medio por tarea"]].map(c=>"<div><b>"+c[0]+"</b><small>"+c[1]+"</small></div>").join("");
+ $("iRows").innerHTML=r.map(x=>"<tr><td>"+(x.t+1)+". "+esc(K[x.t][0].split("¿")[0].trim().slice(0,60))+"…</td><td class=\""+(x.ok?"ok":"bad")+"\">"+(x.ok?(x.d?"✓ Directo":"✓ Con dudas"):"✗ Fallo")+"</td><td>"+sec(x.ms)+"</td><td class=\""+(x.f===K[x.t][1].split(S)[0]?"ok":"bad")+"\">"+esc(x.f)+"</td><td>"+esc(x.p)+"</td><td>"+esc(K[x.t][1])+"</td></tr>").join("");
+ chartInd(rec);pie("iPie",dr,ok-dr,n-ok);
+ const L=[],fails=r.filter(x=>!x.ok),slow=r.slice().sort((a,b)=>b.ms-a.ms)[0];
+ L.push(ok>=9?"Resultado excelente: encontraste casi todo sin problemas, así que el menú te resultó claro.":ok>=7?"Buen resultado: la mayoría de funciones te parecieron fáciles de encontrar.":ok>=5?"Resultado medio: varias funciones no estaban donde esperabas.":"Resultado bajo: el menú te resultó difícil de entender en muchas tareas.");
+ if(ok>dr)L.push((ok-dr)+" de tus aciertos fueron con dudas (volviste atrás o cambiaste de sección). Eso indica que el nombre o el lugar no era del todo evidente.");
+ if(fails.length)L.push("Fallaste las tareas "+fails.map(x=>x.t+1).join(", ")+". "+fails.map(x=>"En la "+(x.t+1)+" elegiste «"+x.p+"»").join("; ")+".");
+ L.push("La tarea que más tiempo te llevó fue la "+(slow.t+1)+" ("+sec(slow.ms)+").");
+ const fc=r.filter(x=>x.f===K[x.t][1].split(S)[0]).length;
+ L.push("Tu primer clic fue en la sección correcta en "+fc+" de "+n+" tareas."+(fc>ok?" En algunas empezaste bien pero acabaste en otro sitio: probablemente el nombre de una subcategoría no te resultó claro.":fc<n-1?" Empezar en otra sección suele indicar que ese contenido podría estar en más de una categoría.":""));
+ const o=db.filter(x=>x.id!==rec.id);
+ if(o.length){const m=avg(o.map(x=>x.r.filter(y=>y.ok).length)),mt=avg(o.map(x=>avg(x.r.map(y=>y.ms))));
+  L.push("Comparado con los "+o.length+" participantes anteriores: acertaste "+ok+" tareas frente a una media de "+m.toFixed(1)+", y tardaste "+(tm>mt?"más":"menos")+" que la media ("+sec(mt)+").")}
+ else L.push("Eres el primer participante, así que aún no hay con quién comparar.");
+ $("iAn").innerHTML=L.map(x=>"<li>"+esc(x)+"</li>").join("")}
+
+/* ---------- global ---------- */
+function showGlob(){
+ view("vGlob");const n=db.length;$("gEmpty").hidden=n>0;$("gBody").hidden=!n;if(!n)return;
+ const all=db.flatMap(x=>x.r),ok=all.filter(x=>x.ok).length;
+ $("gCards").innerHTML=[[n,"participantes"],[pct(ok,all.length)+" %","éxito medio"],[pct(all.filter(x=>x.d).length,all.length)+" %","directencia"],[pct(all.filter(x=>x.f===K[x.t][1].split(S)[0]).length,all.length)+" %","primer clic correcto"],[sec(avg(all.map(x=>x.ms))),"tiempo transcurrido medio"]].map(c=>"<div><b>"+c[0]+"</b><small>"+c[1]+"</small></div>").join("");
+ const st=K.map((k,i)=>{const a=all.filter(x=>x.t===i),w={};
+  a.filter(x=>!x.ok).forEach(x=>w[x.p]=(w[x.p]||0)+1);
+  const top=Object.entries(w).sort((x,y)=>y[1]-x[1])[0];
+  return{i:i,s:pct(a.filter(x=>x.ok).length,a.length),d:pct(a.filter(x=>x.d).length,a.length),t:avg(a.map(x=>x.ms)),top:top,a:a,fc:pct(a.filter(x=>x.f===K[i][1].split(S)[0]).length,a.length),tf:pct(Math.max(0,...Object.values(a.reduce((m,x)=>(m[x.f]=(m[x.f]||0)+1,m),{}))),a.length)}});
+ $("gRows").innerHTML=st.map(x=>"<tr><td>"+(x.i+1)+". "+esc(K[x.i][1])+"</td><td><span class=\"pb\"><i class=\""+(x.s<70?"l":"g")+"\" style=\"width:"+x.s+"%\"></i></span>"+x.s+" %</td><td>"+x.d+" %</td><td>"+sec(x.t)+"</td><td>"+x.fc+" %</td><td>"+(x.top?esc(x.top[0])+" ("+x.top[1]+")":"—")+"</td></tr>").join("");
+ det(st);chartTasks(st);pie("gPie",all.filter(x=>x.d).length,all.filter(x=>x.ok&&!x.d).length,all.filter(x=>!x.ok).length);
+ const ga=avg(db.map(x=>x.r.filter(y=>y.ok).length)),gt=avg(db.map(x=>avg(x.r.map(y=>y.ms))));
+ $("gPart").innerHTML=db.map((x,j)=>{const a=x.r.filter(y=>y.ok).length,t=avg(x.r.map(y=>y.ms));
+  return "<tr><td>P"+String(j+1).padStart(2,"0")+"</td><td>"+esc(x.d)+"</td><td>"+a+"/10</td><td>"+x.r.filter(y=>y.d).length+"/10</td><td>"+sec(t)+"</td><td class=\""+(a>=ga?"ok":"bad")+"\">"+(a>=ga?"Igual o mejor":"Por debajo")+"</td></tr>"}).join("");
+ chartP(ga);
+ const L=[],bad=st.filter(x=>x.s<70).sort((a,b)=>a.s-b.s),best=st.slice().sort((a,b)=>b.s-a.s)[0],slow=st.slice().sort((a,b)=>b.t-a.t)[0];
+ L.push("Con "+n+" participante"+(n>1?"s":"")+", el éxito medio es del "+pct(ok,all.length)+" %. "+(pct(ok,all.length)>=70?"Supera el 70 % recomendado, así que la estructura funciona en general.":"Está por debajo del 70 % recomendado, así que el menú necesita cambios."));
+ L.push("La tarea más fácil es la "+(best.i+1)+" ("+best.s+" % de éxito): «"+K[best.i][1]+"» está bien ubicada.");
+ if(bad.length)bad.forEach(x=>L.push("Problema en la tarea "+(x.i+1)+" ("+x.s+" % de éxito). "+(x.top?"La gente busca en «"+x.top[0]+"» en lugar de «"+K[x.i][1]+"». Conviene renombrar la opción o repetir el acceso en esa sección.":"")));
+ else L.push("Ninguna tarea baja del 70 % de éxito.");
+ const dirLow=st.filter(x=>x.s>=70&&x.d<50);
+ if(dirLow.length)L.push("Las tareas "+dirLow.map(x=>x.i+1).join(", ")+" se aciertan, pero casi siempre con dudas (menos del 50 % directo). Funcionan, aunque el camino no es evidente.");
+ L.push("La tarea más lenta es la "+(slow.i+1)+" ("+sec(slow.t)+" de media).");
+ const sp=st.filter(x=>x.tf<50);
+ if(sp.length)L.push("Primeros clics dispersos (la sección más elegida no llega al 50 %) en las tareas "+sp.map(x=>x.i+1).join(", ")+": la gente duda entre varias áreas. Conviene incluir ese contenido en más de una categoría."+(sp.length>=3?" Como pasa en varias tareas, hay que plantearse cambiar el esquema general de organización.":""));
+ const lb=st.filter(x=>x.s<70&&x.fc>=60);
+ if(lb.length)L.push("En las tareas "+lb.map(x=>x.i+1).join(", ")+" el primer clic suele ser correcto pero el éxito es bajo: el problema está en las subcategorías. Cambia sus etiquetas para que se diferencien más.");
+ L.push("El porcentaje de éxito es solo el primer paso: interprétalo junto con la directencia, el tiempo, el primer clic y el destino, porque las conclusiones no son absolutas.");
+ if(n<50)L.push("Con menos de 50 participantes los datos son orientativos. Se recomiendan al menos 50 tests para evitar sesgos.");
+ $("gAn").innerHTML=L.map(x=>"<li>"+esc(x)+"</li>").join("")}
+
+function pie(id,d,c,f){
+ const n=d+c+f,a=n?100*d/n:0,b=n?a+100*c/n:0,P=v=>pct(v,n)+" %";
+ $(id).innerHTML='<div class="pie" role="img" aria-label="Gráfico de tarta de resultados" style="background:conic-gradient(var(--ok) 0 '+a+'%,#8fcfa5 '+a+'% '+b+'%,var(--bad) '+b+'% 100%)"></div>'
+ +'<div class="lg pl"><b>'+n+' tareas</b><span><i class="g"></i>Acierto directo: '+d+' ('+P(d)+')</span><span><i class="m"></i>Acierto con dudas: '+c+' ('+P(c)+')</span><span><i class="l"></i>Fallo: '+f+' ('+P(f)+')</span></div>'}
+const bar=(v,cls,line,label)=>'<div class="hr"><div class="hb"><i class="'+cls+'" style="width:'+Math.max(0,Math.min(100,v))+'%"></i>'+(line!=null?'<u style="left:'+line+'%"></u>':"")+'</div><em>'+label+'</em></div>';
+function chartTasks(st){
+ const mx=Math.max(1,...st.map(x=>x.t));
+ $("gChart").innerHTML='<div class="lg"><span><i class="g"></i>Éxito (70 % o más)</span><span><i class="l"></i>Éxito (menos de 70 %)</span><span><i class="k2"></i>Directencia</span><span><i class="k3"></i>Primer clic correcto</span><span>Línea discontinua: 70 %</span></div>'
+ +st.map(x=>'<div class="cr"><b>Tarea '+(x.i+1)+'</b><div class="cb">'+bar(x.s,x.s<70?"l":"g",70,x.s+" %")+bar(x.d,"k2",70,x.d+" %")+bar(x.fc,"k3",70,x.fc+" %")+'</div></div>').join("");
+ $("gTime").innerHTML=st.map(x=>'<div class="cr"><b>Tarea '+(x.i+1)+'</b><div class="cb">'+bar(100*x.t/mx,"k2",null,sec(x.t))+'</div></div>').join("")}
+function chartP(ga){
+ $("gP").innerHTML='<div class="lg"><span><i class="g"></i>Igual o por encima de la media</span><span><i class="l"></i>Por debajo de la media</span><span>Línea discontinua: media ('+ga.toFixed(1)+' aciertos)</span></div>'
+ +db.map((x,j)=>{const a=x.r.filter(y=>y.ok).length;return '<div class="cr"><b>P'+String(j+1).padStart(2,"0")+'</b><div class="cb">'+bar(a*10,a>=ga?"g":"l",ga*10,a+"/10")+'</div></div>'}).join("")}
+function chartInd(rec){
+ const o=db.filter(x=>x.id!==rec.id),at=i=>{const a=o.flatMap(x=>x.r.filter(y=>y.t===i)).map(y=>y.ms);return a.length?avg(a):null};
+ const mx=Math.max(1,...rec.r.map(x=>x.ms),...rec.r.map(x=>at(x.t)||0));
+ $("iChart").innerHTML='<b>Tus tiempos por tarea'+(o.length?' frente a la media de los demás':'')+'</b><div class="lg"><span><i class="k2"></i>Tú</span>'+(o.length?'<span><i class="k3"></i>Media de los demás</span>':'')+'<span><b class="ok">✓</b> acertada · <b class="bad">✗</b> fallada</span></div>'
+ +rec.r.map(x=>{const m=at(x.t);return '<div class="cr"><b class="'+(x.ok?"ok":"bad")+'">T'+(x.t+1)+(x.ok?" ✓":" ✗")+'</b><div class="cb">'+bar(100*x.ms/mx,"k2",null,sec(x.ms))+(m!==null?bar(100*m/mx,"k3",null,sec(m)):"")+'</div></div>'}).join("")}
+function det(st){
+ const cnt=a=>{const m={};a.forEach(v=>m[v]=(m[v]||0)+1);return Object.entries(m).sort((x,y)=>y[1]-x[1])};
+ const tb=(t,e,n,g)=>"<h3>"+t+"</h3><div class=\"scroll\"><table><tbody>"+e.slice(0,8).map(r=>"<tr><td>"+esc(r[0])+(r[0]===g?" ✓":"")+"</td><td style=\"width:150px\"><span class=\"pb\"><i style=\"width:"+pct(r[1],n)+"%\"></i></span>"+pct(r[1],n)+" %</td></tr>").join("")+"</tbody></table></div>";
+ $("gDet").innerHTML=st.map(x=>{const a=x.a,n=a.length,c=K[x.i][1];
+  return "<details class=\"panel\"><summary><b>Tarea "+(x.i+1)+"</b>: "+esc(K[x.i][0].split(".")[0].slice(0,80))+"…</summary>"
+  +tb("Primer clic (sección que más gente elige primero)",cnt(a.map(y=>y.f)),n,c.split(S)[0])
+  +tb("Destino (respuesta final más elegida)",cnt(a.map(y=>y.p)),n,c)
+  +tb("Frecuencia de selección (personas que hicieron clic en cada categoría)",cnt(a.flatMap(y=>y.c||[])),n,c)+"</details>"}).join("")}
+
+/* ---------- exportar / importar ---------- */
+function dl(name,txt,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:type}));a.download=name;a.click()}
+$("eJson").onclick=()=>dl("tree-test-resultados.json",JSON.stringify(db,null,1),"application/json");
+$("eCsv").onclick=()=>{const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+ const rows=["participante,fecha,tarea,acierto,directo,segundos,ruta_elegida,primer_clic,clics"];
+ db.forEach((x,j)=>x.r.forEach(y=>rows.push([ "P"+(j+1),x.d,y.t+1,y.ok?1:0,y.d?1:0,(y.ms/1000).toFixed(1),q(y.p),q(y.f),q((y.c||[]).join(" | "))].join(","))));
+ dl("tree-test-resultados.csv","\ufeff"+rows.join("\n"),"text/csv")};
+$("imp").onclick=()=>$("file").click();
+$("file").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+ rd.onload=()=>{try{const a=JSON.parse(rd.result);if(!Array.isArray(a))throw 0;
+  const ids=new Set(db.map(x=>x.id));let c=0;
+  a.forEach(x=>{if(x&&x.id&&Array.isArray(x.r)&&!ids.has(x.id)){db.push(x);ids.add(x.id);c++}});
+  save();showGlob();alert(c+" test(s) importados.")}catch(err){alert("El archivo no es válido.")}};
+ rd.readAsText(f);e.target.value=""};
+$("reset").onclick=()=>{if(confirm("¿Borrar todos los resultados guardados? No se puede deshacer.")){db=[];save();showGlob()}};
+
+$("go").onclick=start;$("again").onclick=()=>{view("vIntro")};$("toG").onclick=showGlob;
+$("nTest").onclick=()=>view("vIntro");$("nGlob").onclick=showGlob;
+$("ok").onclick=()=>answer(false);$("skip").onclick=()=>answer(true);
+</script>
+</body>
+</html>
